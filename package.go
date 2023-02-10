@@ -45,7 +45,7 @@ func GetPackageByID(db *sql.DB, id int64) *Package {
 
 func GetPackageByURL(db *sql.DB, url string) *Package {
 	var pkg Package
-	row := db.QueryRow("SELECT id, url FROM packages WHERE url = ?", url)
+	row := db.QueryRow("SELECT id, url FROM packages WHERE UPPER(url) = UPPER(?)", url)
 	err := row.Scan(&pkg.ID, &pkg.URL)
 	if err != nil {
 		return nil
