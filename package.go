@@ -2,10 +2,11 @@ package zigcentral
 
 import (
 	"database/sql"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -15,14 +16,16 @@ type Package struct {
 }
 
 type PackageInfo struct {
-	Sha    string `json:"sha"`
+	Sha    string
 	Name   string
 	Readme string
+	Hash   string
 }
 
 func GetPackages(db *sql.DB) []Package {
 	pkgs := make([]Package, 0)
 	rows, _ := db.Query("SELECT id, url FROM packages")
+	defer rows.Close()
 	for rows.Next() {
 		var pkg Package
 		err := rows.Scan(&pkg.ID, &pkg.URL)
@@ -63,30 +66,46 @@ func (p *Package) Save(db *sql.DB) error {
 	}
 }
 
-func (p *Package) GetInfo() *PackageInfo {
+func (p *Package) GetInfo(db *sql.DB) *PackageInfo {
+	info := &PackageInfo{}
 	u, _ := url.Parse(p.URL)
-	githubInfoURL := "https://api.github.com/repos" + u.Path + "/commits/HEAD"
-	res, err := http.Get(githubInfoURL)
+	out, err := exec.Command("git", "ls-remote", p.URL, "HEAD").Output()
 	if err != nil {
 		return nil
 	}
-	var info PackageInfo
+	sha := string(out[0:40])
 	info.Name = strings.Split(u.Path, "/")[2]
-	defer res.Body.Close()
-	b, _ := io.ReadAll(res.Body)
-	err = json.Unmarshal(b, &info)
-	if err != nil {
-		return nil
+	info.Sha = sha
+
+	// Hash can be empty, compute hash
+	row := db.QueryRow("SELECT hash FROM package_hashes WHERE package_id = ? and sha_commit = ?", p.ID, info.Sha)
+	err = row.Scan(&info.Hash)
+	if err != nil || info.Hash == "" {
+		go func() {
+			res, err := http.Get(p.URL + "/archive/" + info.Sha + ".tar.gz")
+			if err != nil {
+				return
+			}
+			defer res.Body.Close()
+			path, err := ExtractTarGz(res.Body)
+			defer os.RemoveAll(path)
+			if err != nil {
+				return
+			}
+			hash := ComputeHash(path)
+			db.Exec("INSERT INTO package_hashes(package_id, sha_commit, hash) VALUES(?, ?, ?)", p.ID, info.Sha, hash)
+		}()
 	}
+
 	// README is optional
-	res, err = http.Get(p.URL + "/raw/HEAD/README.md")
+	res, err := http.Get(p.URL + "/raw/HEAD/README.md")
 	if err != nil {
-		return &info
+		return info
 	}
 	defer res.Body.Close()
 	if res.StatusCode == 200 {
-		b, _ = io.ReadAll(res.Body)
+		b, _ := io.ReadAll(res.Body)
 		info.Readme = string(b)
 	}
-	return &info
+	return info
 }

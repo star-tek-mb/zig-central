@@ -61,7 +61,7 @@ func (h *Handlers) PackagePage(w http.ResponseWriter, req *http.Request) {
 		http.NotFound(w, req)
 		return
 	}
-	info := pkg.GetInfo()
+	info := pkg.GetInfo(h.db)
 	if info == nil {
 		http.NotFound(w, req)
 		return
@@ -100,8 +100,9 @@ func (h *Handlers) PostAction(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	p := Package{URL: url}
+	p := &Package{URL: url}
 	p.Save(h.db)
+	go p.GetInfo(h.db)
 
 	http.Redirect(w, req, "/", http.StatusFound)
 }

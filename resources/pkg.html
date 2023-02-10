@@ -27,6 +27,7 @@
     .dependencies = .{
         .{{ .Info.Name }} = .{
             .url = "{{ .Pkg.URL }}/archive/{{ .Info.Sha }}.tar.gz",
+            .hash = "{{ .Info.Hash }}",
         },
     }
 }</code></pre>

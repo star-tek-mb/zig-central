@@ -11,7 +11,10 @@ import (
 )
 
 func migrate(db *sql.DB) {
-	_, err := db.Exec("create table packages(id integer primary key autoincrement, url text not null);")
+	_, err := db.Exec(`
+create table packages(id integer primary key autoincrement, url text not null);
+create table package_hashes(package_id integer, sha_commit text not null, hash text not null);
+`)
 	if err != nil {
 		log.Println(err)
 	}
