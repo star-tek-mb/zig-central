@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zig Central</title>
+    <link rel="stylesheet" href="/static/simple.min.css">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="/" class="current">Home</a>
+            <a href="/post">Add Package</a>
+        </nav>
+        <h1>Zig Central (unofficial)</h1>
+    </header>
+    <main>
+        <article>
+            <p><a href="{{ .Pkg.URL }}">{{ .Pkg.URL }}</a></p>
+            <p>Last version: <kbd>{{ .Info.Sha }}</kbd></p>
+            <p>
+                Add to your <code>build.zig.zon</code>:
+                <pre><code>.{
+    .dependencies = .{
+        .{{ .Info.Name }} = .{
+            .url = "{{ .Pkg.URL }}/archive/{{ .Info.Sha }}.tar.gz",
+        },
+    }
+}</code></pre>
+            </p>
+            {{ .Readme }}
+        </article>
+    </main>
+</body>
+
+</html>

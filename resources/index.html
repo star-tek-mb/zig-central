@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zig Central</title>
+    <link rel="stylesheet" href="/static/simple.min.css">
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="/" class="current">Home</a>
+            <a href="/post">Add Package</a>
+        </nav>
+        <h1>Zig Central (unofficial)</h1>
+    </header>
+    <main>
+        <h1>All packages</h1>
+        {{ range .Pkgs }}
+        <article>
+            <p><a href="/pkg/{{ .ID }}">{{ .URL }}</a></p>
+        </article>
+        {{ end }}
+    </main>
+</body>
+
+</html>
